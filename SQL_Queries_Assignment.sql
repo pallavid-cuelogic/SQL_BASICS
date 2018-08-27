@@ -6,7 +6,7 @@ CREATE TABLE EmployeeDetails(
 		EmpId INT NOT NULL PRIMARY KEY,
         FullName VARCHAR(30),
         ManagerId INT ,
-        FOREIGN KEY (ManagerId) REFERENCES EmployeeDetails(EmpId),       
+        FOREIGN KEY (ManagerId) REFERENCES EmployeeDetails(EmpId),    
         DateOfJoining DATE
         )ENGINE INNODB;
 
@@ -15,7 +15,11 @@ CREATE TABLE EmployeeSalary(
         Project VARCHAR(30),
         Salary INT
         );   
-        
+
+SELECT * FROM EmployeeDetails;
+
+SELECT * FROM EmployeeSalary;
+     
 #1).to fetch total number of employees working on project ‘Microsoft Office’ 
 SELECT COUNT(EmployeeDetails.EmpId) 
 FROM EmployeeDetails,EmployeeSalary 
@@ -51,7 +55,16 @@ INNER JOIN EmployeeDetails e2
 ON e1.ManagerId = e2.EmpId;
 
 #8).to fetch employees with no project assigned 
-SELECT * FROM EmployeeDetails,EmployeeSalary WHERE Project=null;  
+SELECT * 
+FROM EmployeeDetails
+JOIN EmployeeSalary
+ON EmployeeDetails.EmpId = EmployeeSalary.EmpId
+AND EmployeeSalary.Project Is NULL
+OR EmployeeSalary.Project='';
+
+INSERT INTO EmployeeDetails VALUES(12,"Mariya Weth",4,'2013-02-01'); 
+
+INSERT INTO EmployeeSalary VALUES(12,null,40000); 
 
 #9).to update joining date of ‘Rahul Dravid’ to ’03/10/2014’ 
 UPDATE EmployeeDetails SET DateOfJoining='2014-10-03' WHERE FullName = "Isla Jake";
@@ -65,24 +78,121 @@ SELECT * FROM EmployeeDetails
 ORDER BY EmployeeDetails.DateOfJoining DESC;
 
 #12).to display following columns: FullName, ManagerName, Project, Salary 
-SELECT e1.FullName EmployeeName, e2.FullName 
-AS ManagerName,EmployeeSalary.Project,EmployeeSalary.Salary
+SELECT e1.FullName EmployeeName, e2.FullName AS ManagerName,
+case when EmployeeSalary.Project Is null or EmployeeSalary.Project = '' 
+then 'No Project' 
+else EmployeeSalary.Project 
+end,
+EmployeeSalary.Salary
 FROM EmployeeDetails e1
 INNER JOIN EmployeeDetails e2
 ON e1.ManagerId = e2.EmpId
-LEFT JOIN EmployeeSalary
-ON e1.EmpId =EmployeeSalary.EmpId;
-
+left join EmployeeSalary
+on e1.EmpId =EmployeeSalary.EmpId;
 
 #13).to fetch employees who are not part of project ‘Facebook' 
-SELECT *
+SELECT EmployeeDetails.EmpId,EmployeeDetails.FullName
 FROM EmployeeDetails
 JOIN EmployeeSalary
-WHERE EmployeeSalary.Project NOT IN ('Facebook');
+ON EmployeeDetails.EmpId = EmployeeSalary.EmpId
+AND EmployeeSalary.Project NOT IN('Facebook');
 
 #14).display your name and date of birth 
 SELECT 'Pallavi Deshmukh','1997-03-28';
 
 #15).display today’s date and your age in years 
 SELECT CURDATE(),TIMESTAMPDIFF(YEAR,'1997-03-28',CURDATE());
-	
+
+UPDATE EmployeeSalary SET Project=NULL WHERE EmpId=3;
+
+##############################################################################
+STORED PROCEDURE
+
+DELIMITER //
+CREATE PROCEDURE GetSpecificEmployees3(IN ProjectName varchar(20))
+BEGIN
+	SELECT EmployeeDetails.EmpId,EmployeeDetails.FullName
+	FROM EmployeeDetails
+	JOIN EmployeeSalary
+	ON EmployeeDetails.EmpId = EmployeeSalary.EmpId
+	AND EmployeeSalary.Project = 'Facebook';
+END //
+
+
+
+CALL GetSpecificEmployees3(@increment);
+
+SET @increment ="Facebook";
+##############################################################################
+
+##############################################################################
+# VIEW
+
+CREATE VIEW employees as
+SELECT e1.FullName EmployeeName, e2.FullName AS ManagerName,
+case when EmployeeSalary.Project IS NULL or EmployeeSalary.Project = '' 
+then 'No Project' 
+else EmployeeSalary.Project 
+end,
+EmployeeSalary.Salary
+FROM EmployeeDetails e1
+INNER JOIN EmployeeDetails e2
+ON e1.ManagerId = e2.EmpId
+left join EmployeeSalary
+on e1.EmpId =EmployeeSalary.EmpId;
+
+SELECT * FROM employees;
+
+##############################################################################
+
+##############################################################################
+UserDefined Functions
+
+DELIMITER $$
+CREATE FUNCTION GetInformation2(ProjectName varchar(10)) 
+RETURNS INTEGER
+BEGIN
+	 DECLARE b integer;
+    SELECT count(EmployeeDetails.EmpId) INTO b
+	FROM EmployeeDetails
+	JOIN EmployeeSalary
+	ON EmployeeDetails.EmpId = EmployeeSalary.EmpId
+	AND EmployeeSalary.Project NOT IN(ProjectName);
+    return b;
+END$$
+
+
+
+SELECT GetInformation2("Facebook");
+  
+
+##############################################################################
+
+
+SET SQL_SAFE_UPDATES=0;
+
+
+
+
+
+
+
+DELIMITER //
+CREATE PROCEDURE GetSpecificEmployees2(IN ProjectName varchar(20))
+BEGIN
+	SELECT * FROM EmployeeDetails;
+    END //
+    
+    CALL GetSpecificEmployees2(@Facbook);
+
+
+DELIMITER //
+CREATE PROCEDURE GetSpecificEmployees()
+BEGIN
+	SELECT * FROM EmployeeDetails;
+END //
+
+
+
+
+
